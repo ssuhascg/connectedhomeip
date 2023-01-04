@@ -27,6 +27,7 @@
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/timers.h" // provides FreeRTOS timer support
+#include "../../../../src/app/clusters/door-lock-server/door-lock-server.h" //added to use struct EmberAfPluginDoorLockUserInfo
 
 class BoltLockManager
 {
@@ -57,6 +58,7 @@ public:
     typedef void (*Callback_fn_initiated)(Action_t, int32_t aActor);
     typedef void (*Callback_fn_completed)(Action_t);
     void SetCallbacks(Callback_fn_initiated aActionInitiated_CB, Callback_fn_completed aActionCompleted_CB);
+	EmberAfPluginDoorLockUserInfo user1; //added to use structure EmberAfPluginDoorLockUserInfo	
 
 private:
     friend BoltLockManager & BoltLockMgr(void);

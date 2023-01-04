@@ -21,6 +21,7 @@
 #include "AppTask.h"
 #include "esp_log.h"
 #include <freertos/FreeRTOS.h>
+#include "../../../../src/app/clusters/door-lock-server/door-lock-server.h" 
 static const char * TAG = "BoltLockManager";
 BoltLockManager BoltLockManager::sLock;
 

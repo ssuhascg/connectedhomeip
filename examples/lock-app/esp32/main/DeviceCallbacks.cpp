@@ -64,11 +64,78 @@ void AppDeviceCallbacks::OnOnOffPostAttributeChangeCallback(EndpointId endpointI
     if (*value)
     {
         BoltLockMgr().InitiateAction(AppEvent::kEventType_Lock, BoltLockManager::LOCK_ACTION);
+		ESP_LOGI(TAG, "\n\n Lock Action \n\n");
     }
     else
     {
         BoltLockMgr().InitiateAction(AppEvent::kEventType_Lock, BoltLockManager::UNLOCK_ACTION);
+		ESP_LOGI(TAG, "\n\n Unlock Action \n\n");
     }
 exit:
     return;
 }
+
+//plugin for lock-door command
+bool emberAfPluginDoorLockOnDoorLockCommand(chip::EndpointId endpointId, const Optional<ByteSpan> & pinCode, DlOperationError & err)
+{
+    BoltLockManager::State_t mState;
+    mState = BoltLockManager::kState_UnlockingCompleted;
+    ESP_LOGI(TAG, "\n\n lock-door command plugin  \n\n");
+    if(mState == BoltLockManager::kState_UnlockingCompleted) {
+            BoltLockMgr().InitiateAction(AppEvent::kEventType_Lock, BoltLockManager::LOCK_ACTION);
+            ESP_LOGI(TAG, "Door Locked\n");
+     } else {
+            ESP_LOGI(TAG, "Door is already locked\n");
+     }
+    err = DlOperationError::kUnspecified;
+    return true;
+}
+
+//plugin for unlock-door command
+bool emberAfPluginDoorLockOnDoorUnlockCommand(chip::EndpointId endpointId, const Optional<ByteSpan> & pinCode, DlOperationError & err)
+{
+    BoltLockManager::State_t mState;
+    mState = BoltLockManager::kState_LockingCompleted;
+    ESP_LOGI(TAG, "\n\n unlock-door command plugin \n\n");
+    if(mState == BoltLockManager::kState_LockingCompleted) {
+        BoltLockMgr().InitiateAction(AppEvent::kEventType_Lock, BoltLockManager::UNLOCK_ACTION);
+        ESP_LOGI(TAG, "Door unlocked\n");
+    } else {
+        ESP_LOGI(TAG, "Door is already unlocked!!!!\n");
+    }
+    err = DlOperationError::kUnspecified;
+    return true;
+}
+
+//plugin for getuser api
+bool emberAfPluginDoorLockGetUser(chip::EndpointId endpointId, uint16_t userIndex, EmberAfPluginDoorLockUserInfo & user)
+{
+        ESP_LOGI(TAG, "emberAfPluginDoorLockGetUser\n");
+        user.userName = BoltLockMgr().user1.userName;
+        user.userUniqueId = BoltLockMgr().user1.userUniqueId;
+        user.userStatus = BoltLockMgr().user1.userStatus;
+        user.userType = BoltLockMgr().user1.userType;
+        user.credentialRule = BoltLockMgr().user1.credentialRule;
+        user.createdBy = BoltLockMgr().user1.createdBy;
+        ESP_LOGI(TAG, "userUniqueId = 0x%" PRIx32, user.userUniqueId);
+        return true;
+}
+
+//plugin for set-user command
+bool emberAfPluginDoorLockSetUser(chip::EndpointId endpointId, uint16_t userIndex, FabricIndex creator, FabricIndex modifier, const chip::CharSpan & userName, uint32_t uniqueId, DlUserStatus userStatus, DlUserType usertype, DlCredentialRule credentialRule, const DlCredential * credentials, size_t totalCredentials)
+{
+    ESP_LOGI(TAG, "set-user command plugin\n");
+    MutableCharSpan uName;
+    uName = MutableCharSpan(static_cast<char *>(Platform::MemoryAlloc(userName.size())),userName.size());
+    CopyCharSpanToMutableCharSpan(userName, uName);
+    BoltLockMgr().user1.userName = CharSpan(uName);
+    ESP_LOGI(TAG,"Username = \"%.*s\" from set-user", static_cast<int>(BoltLockMgr().user1.userName.size()), BoltLockMgr().user1.userName.data());
+    BoltLockMgr().user1.userUniqueId = uniqueId;
+    BoltLockMgr().user1.userStatus = userStatus;
+    BoltLockMgr().user1.userType = usertype;
+    BoltLockMgr().user1.credentialRule = credentialRule;
+    BoltLockMgr().user1.createdBy = creator;
+    return true;
+}
+
+
